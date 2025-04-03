@@ -1,5 +1,5 @@
 <?php
 echo "¡Hola, Docker con CI/CD!";
-echo "prueba despliegue 5";
+echo "prueba despliegue 6";
 ?>
 
