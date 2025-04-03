@@ -1,26 +1,37 @@
-name: Deploy to WSL Server
+name: Deploy PHP App
 
 on:
   push:
     branches:
-      - main  # Se ejecuta en cada push a la rama main
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del código
+      - name: 📥 Clonar el repositorio
         uses: actions/checkout@v3
 
-      - name: Instalar SSHPass para autenticación con contraseña
-        run: sudo apt-get install -y sshpass
+      - name: 🚀 Copiar archivos al servidor con puerto SSH personalizado
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ vars.SERVER_SSH_PORT }}  # Usa la variable del repositorio
+          source: "."
+          target: "/var/www/php-docker-ci-cd"
 
-      - name: Desplegar en el servidor WSL
-        run: |
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            cd /ruta/del/proyecto
-            git pull origin main
+      - name: 📦 Construir y desplegar con Docker Compose usando puerto SSH personalizado
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ vars.SERVER_SSH_PORT }}  # Usa la variable del repositorio
+          script: |
+            cd /var/www/php-docker-ci-cd
             docker-compose down
             docker-compose up -d --build
-          EOF
+            echo "Aplicación desplegada en http://${{ secrets.SERVER_IP }}:8085"
 
