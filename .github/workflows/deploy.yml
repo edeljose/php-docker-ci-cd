@@ -39,5 +39,5 @@ jobs:
           script: |
             cd /var/www/php-docker-ci-cd
             docker-compose down
-            docker-compose up -d --build --no-cache
+            docker-compose up -d --build
 
