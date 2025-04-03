@@ -1,10 +1,3 @@
-name: Deploy PHP App
-
-on:
-  push:
-    branches:
-      - main
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,25 +5,31 @@ jobs:
       - name: 📥 Clonar el repositorio
         uses: actions/checkout@v3
 
+      - name: 🔍 Verificar las variables de entorno
+        run: |
+          echo "IP del servidor: ${{ secrets.SERVER_IP }}"
+          echo "Usuario: ${{ secrets.SERVER_USER }}"
+          echo "Puerto SSH: ${{ vars.SERVER_SSH_PORT }}"
+
       - name: 🚀 Copiar archivos al servidor con puerto SSH personalizado
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}  # Usa la contraseña en lugar de key
+          password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ vars.SERVER_SSH_PORT }}
           source: "."
           target: "/var/www/php-docker-ci-cd"
 
-      - name: 📦 Construir y desplegar con Docker Compose usando puerto SSH personalizado
+      - name: 📦 Construir y desplegar con Docker Compose
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}  # Usa la contraseña en lugar de key
+          password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ vars.SERVER_SSH_PORT }}
           script: |
             cd /var/www/php-docker-ci-cd
             docker-compose down
             docker-compose up -d --build
-            echo "Aplicación desplegada en http://${{ secrets.SERVER_IP }}:8085"
+
