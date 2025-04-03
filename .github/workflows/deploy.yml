@@ -17,8 +17,8 @@ jobs:
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ vars.SERVER_SSH_PORT }}  # Usa la variable del repositorio
+          password: ${{ secrets.SERVER_PASSWORD }}  # Usa la contraseña en lugar de key
+          port: ${{ vars.SERVER_SSH_PORT }}
           source: "."
           target: "/var/www/php-docker-ci-cd"
 
@@ -27,11 +27,10 @@ jobs:
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ vars.SERVER_SSH_PORT }}  # Usa la variable del repositorio
+          password: ${{ secrets.SERVER_PASSWORD }}  # Usa la contraseña en lugar de key
+          port: ${{ vars.SERVER_SSH_PORT }}
           script: |
             cd /var/www/php-docker-ci-cd
             docker-compose down
             docker-compose up -d --build
             echo "Aplicación desplegada en http://${{ secrets.SERVER_IP }}:8085"
-
