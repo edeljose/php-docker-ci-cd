@@ -1,0 +1,26 @@
+name: Deploy to WSL Server
+
+on:
+  push:
+    branches:
+      - main  # Se ejecuta en cada push a la rama main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v3
+
+      - name: Instalar SSHPass para autenticación con contraseña
+        run: sudo apt-get install -y sshpass
+
+      - name: Desplegar en el servidor WSL
+        run: |
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            cd /ruta/del/proyecto
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+          EOF
+
