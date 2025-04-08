@@ -1,43 +1,53 @@
-name: Deploy PHP App
-
+name: Deploy PHP App por rama
 on:
   push:
     branches:
-      - main  # Se ejecuta cuando hagas push a main
-  workflow_dispatch:  # Permite ejecutar manualmente desde GitHub Actions
-
+      - dev
+      - staging
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Clonar el repositorio
         uses: actions/checkout@v3
 
-      - name: 🔍 Verificar las variables de entorno
+      - name: ⚙️ Definir variables según la rama
+        id: vars
         run: |
-          echo "IP del servidor: ${{ secrets.SERVER_IP }}"
-          echo "Usuario: ${{ secrets.SERVER_USER }}"
-          echo "Puerto SSH: ${{ secrets.SERVER_SSH_PORT }}"
+          echo "Rama actual: ${{ github.ref_name }}"
+          if [[ "${{ github.ref_name }}" == "dev" ]]; then
+            echo "ENV_FILE=.env.dev" >> $GITHUB_ENV
+            echo "REMOTE_PATH=/var/www/php-app-dev" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == "staging" ]]; then
+            echo "ENV_FILE=.env.staging" >> $GITHUB_ENV
+            echo "REMOTE_PATH=/var/www/php-app-staging" >> $GITHUB_ENV
+          else
+            echo "ENV_FILE=.env.prod" >> $GITHUB_ENV
+            echo "REMOTE_PATH=/var/www/php-app" >> $GITHUB_ENV
+          fi
 
-      - name: 🚀 Copiar archivos al servidor con puerto SSH personalizado
+      - name: 🛠️ Copiar archivos al servidor
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
-          port: ${{ secrets.SERVER_SSH_PORT }}  # Cambiar vars a secrets
+          port: ${{ secrets.SERVER_SSH_PORT }}
           source: "."
-          target: "/var/www/php-docker-ci-cd"
+          target: "${{ env.REMOTE_PATH }}"
 
-      - name: 📦 Construir y desplegar con Docker Compose
+      - name: 🚀 Desplegar con Docker Compose
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
-          port: ${{ secrets.SERVER_SSH_PORT }}  # Cambiar vars a secrets
+          port: ${{ secrets.SERVER_SSH_PORT }}
           script: |
-            cd /var/www/php-docker-ci-cd
+            cd ${{ env.REMOTE_PATH }}
+            cp ${{ env.ENV_FILE }} .env
             docker-compose down
-            docker-compose up -d --build
+            docker-compose --env-file .env up -d --build
 
